@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Store:etc/config.xsd">
+    <default>
+        <slova_cookieconsent>
+            <general>
+                <enabled>1</enabled>
+                <!-- 1 an, aliniat cu recomandarea CNIL (max ~13 luni) -->
+                <cookie_lifetime>31536000</cookie_lifetime>
+                <!-- bump la schimbarea politicii → re-consimțire -->
+                <consent_version>1</consent_version>
+                <privacy_page>privacy-policy-cookie-restriction-mode</privacy_page>
+            </general>
+        </slova_cookieconsent>
+    </default>
+</config>

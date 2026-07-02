@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Config:etc/system_file.xsd">
+    <system>
+        <section id="slova_cookieconsent" translate="label" sortOrder="900" showInDefault="1"
+                 showInWebsite="1" showInStore="1">
+            <label>Cookie Consent (Slova)</label>
+            <tab>general</tab>
+            <resource>Magento_Config::config</resource>
+            <group id="general" translate="label" sortOrder="10" showInDefault="1"
+                   showInWebsite="1" showInStore="1">
+                <label>General</label>
+                <field id="enabled" translate="label" type="select" sortOrder="10"
+                       showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Enable Cookie Consent</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment>Dezactivează Cookie Restriction Mode nativ când acesta e activ (evită dublarea bannerului).</comment>
+                </field>
+                <field id="cookie_lifetime" translate="label" type="text" sortOrder="20"
+                       showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Consent Lifetime (seconds)</label>
+                    <validate>validate-digits</validate>
+                    <comment>Durata consimțământului în secunde (31536000 = 1 an).</comment>
+                </field>
+                <field id="consent_version" translate="label" type="text" sortOrder="30"
+                       showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Consent Version</label>
+                    <validate>validate-digits</validate>
+                    <comment>Crește valoarea la schimbarea politicii pentru a re-solicita consimțământul.</comment>
+                </field>
+                <field id="privacy_page" translate="label" type="text" sortOrder="40"
+                       showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Privacy Policy URL Key</label>
+                    <comment>URL key-ul paginii CMS de politică de confidențialitate.</comment>
+                </field>
+            </group>
+        </section>
+    </system>
+</config>
