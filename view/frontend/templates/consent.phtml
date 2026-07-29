@@ -120,62 +120,16 @@ $categories = $config->getCategories();
     #slova-cookie .cc-toggle input:disabled + .cc-toggle__track { background: #94a3b8; }
 </style>
 
+<?php /* Logica trăiește în web/js/consent.js — inline rămâne doar configul din PHP. */ ?>
 <script>
-    function initCookieConsentStore() {
-        return {
-            cookieName: '<?= $escaper->escapeJs($config->getCookieName()) ?>',
-            version: <?= (int) $config->getConsentVersion() ?>,
-            lifetimeDays: <?= (int) $config->getLifetimeDays() ?>,
-            ready: false,
-            decided: false,
-            open: false,
-            prefs: { necessary: true, analytics: false, marketing: false },
-
-            init() {
-                const stored = this.read();
-                if (stored && stored.v === this.version) {
-                    this.prefs.analytics = !! stored.analytics;
-                    this.prefs.marketing = !! stored.marketing;
-                    this.decided = true;
-                }
-                this.ready = true;
-
-                // API global pentru gating scripturi (F2) și linkul „Setări cookie" din footer (F3)
-                window.slovaConsent = {
-                    has: (cat) => this.prefs[cat] === true,
-                    get: () => Object.assign({}, this.prefs),
-                    open: () => { this.open = true; }
-                };
-                window.dispatchEvent(new CustomEvent('slova:consent-ready', { detail: Object.assign({}, this.prefs) }));
-            },
-            read() {
-                const raw = hyva.getCookie(this.cookieName);
-                if (! raw) return null;
-                try { return JSON.parse(unescape(raw)); } catch (e) { return null; }
-            },
-            persist() {
-                const payload = {
-                    v: this.version,
-                    necessary: true,
-                    analytics: !! this.prefs.analytics,
-                    marketing: !! this.prefs.marketing,
-                    ts: Math.floor(Date.now() / 1000)
-                };
-                hyva.setCookie(this.cookieName, JSON.stringify(payload), this.lifetimeDays);
-                this.decided = true;
-                this.open = false;
-                window.dispatchEvent(new CustomEvent('slova:consent-updated', { detail: Object.assign({}, this.prefs) }));
-            },
-            acceptAll() { this.prefs.analytics = true; this.prefs.marketing = true; this.persist(); },
-            rejectAll() { this.prefs.analytics = false; this.prefs.marketing = false; this.persist(); },
-            savePrefs() { this.persist(); },
-            openModal() { this.open = true; },
-            closeModal() { this.open = false; }
-        }
-    }
-    window.addEventListener('alpine:init', () => Alpine.store('cookieConsent', initCookieConsentStore()), { once: true });
+    window.slovaConsentConfig = {
+        cookieName: '<?= $escaper->escapeJs($config->getCookieName()) ?>',
+        version: <?= (int) $config->getConsentVersion() ?>,
+        lifetimeDays: <?= (int) $config->getLifetimeDays() ?>
+    };
 </script>
 <?php $hyvaCsp->registerInlineScript() ?>
+<script src="<?= $escaper->escapeUrl($block->getViewFileUrl('Slova_CookieConsent::js/consent.js')) ?>" defer></script>
 
 <div id="slova-cookie">
     <!-- Banner -->
