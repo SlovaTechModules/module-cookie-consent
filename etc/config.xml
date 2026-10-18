@@ -5,12 +5,22 @@
         <slova_cookieconsent>
             <general>
                 <enabled>1</enabled>
-                <!-- 1 an, aliniat cu recomandarea CNIL (max ~13 luni) -->
-                <cookie_lifetime>31536000</cookie_lifetime>
-                <!-- bump la schimbarea politicii → re-consimțire -->
+                <categories>analytics,marketing</categories>
+                <!-- Raise to ask every visitor again (e.g. after a policy change). -->
                 <consent_version>1</consent_version>
+                <!-- About six months, as the French CNIL recommends; most EU regulators accept up to 13. -->
+                <lifetime_days>180</lifetime_days>
                 <privacy_page>privacy-policy-cookie-restriction-mode</privacy_page>
+                <reopen_button>1</reopen_button>
             </general>
+            <appearance>
+                <position>corner_right</position>
+            </appearance>
+            <consent_mode>
+                <enabled>1</enabled>
+                <wait_for_update>500</wait_for_update>
+                <ads_data_redaction>1</ads_data_redaction>
+            </consent_mode>
         </slova_cookieconsent>
     </default>
 </config>

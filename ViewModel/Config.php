@@ -1,95 +1,182 @@
 <?php
 /**
  * Slova_CookieConsent
- * Copyright © Slova. All rights reserved.
+ * Copyright © Slova. Licensed under the MIT License, see LICENSE.
  */
 
 declare(strict_types=1);
 
 namespace Slova\CookieConsent\ViewModel;
 
-use Magento\Framework\App\Config\ScopeConfigInterface;
+use Magento\Framework\Serialize\Serializer\Json;
 use Magento\Framework\UrlInterface;
 use Magento\Framework\View\Element\Block\ArgumentInterface;
-use Magento\Store\Model\ScopeInterface;
+use Slova\CookieConsent\Model\CategoryPool;
+use Slova\CookieConsent\Model\Config as ModuleConfig;
 
+/**
+ * Everything the banner template needs. Nothing here depends on the visitor, so the
+ * markup is safe in the full page cache; the browser decides what to show.
+ */
 class Config implements ArgumentInterface
 {
-    public const COOKIE_NAME = 'slova_consent';
+    /** Kept from 1.x, where the constant lived here. */
+    public const COOKIE_NAME = ModuleConfig::COOKIE_NAME;
 
-    private const XML_ENABLED = 'slova_cookieconsent/general/enabled';
-    private const XML_LIFETIME = 'slova_cookieconsent/general/cookie_lifetime';
-    private const XML_VERSION = 'slova_cookieconsent/general/consent_version';
-    private const XML_POLICY = 'slova_cookieconsent/general/privacy_page';
-
+    /**
+     * @param ModuleConfig $config
+     * @param CategoryPool $categoryPool
+     * @param UrlInterface $url
+     * @param Json $json
+     */
     public function __construct(
-        private readonly ScopeConfigInterface $scopeConfig,
-        private readonly UrlInterface $url
+        private readonly ModuleConfig $config,
+        private readonly CategoryPool $categoryPool,
+        private readonly UrlInterface $url,
+        private readonly Json $json
     ) {
     }
 
+    /**
+     * Whether the banner runs in this store view.
+     *
+     * @return bool
+     */
     public function isEnabled(): bool
     {
-        return $this->scopeConfig->isSetFlag(self::XML_ENABLED, ScopeInterface::SCOPE_STORE);
+        return $this->config->isEnabled();
     }
 
+    /**
+     * Name of the consent cookie.
+     *
+     * @return string
+     */
     public function getCookieName(): string
     {
-        return self::COOKIE_NAME;
-    }
-
-    public function getLifetimeSeconds(): int
-    {
-        return (int) ($this->scopeConfig->getValue(self::XML_LIFETIME, ScopeInterface::SCOPE_STORE) ?: 31536000);
+        return $this->config->getCookieName();
     }
 
     /**
-     * hyva.setCookie așteaptă durata în zile.
+     * Current consent version.
+     *
+     * @return int
      */
-    public function getLifetimeDays(): int
-    {
-        return (int) max(1, floor($this->getLifetimeSeconds() / 86400));
-    }
-
     public function getConsentVersion(): int
     {
-        return (int) ($this->scopeConfig->getValue(self::XML_VERSION, ScopeInterface::SCOPE_STORE) ?: 1);
-    }
-
-    public function getPrivacyUrl(): string
-    {
-        $page = $this->scopeConfig->getValue(self::XML_POLICY, ScopeInterface::SCOPE_STORE)
-            ?: 'privacy-policy-cookie-restriction-mode';
-
-        return $this->url->getUrl($page);
+        return $this->config->getConsentVersion();
     }
 
     /**
-     * Categoriile expuse în modal. Necesare = mereu on (locked).
+     * Offered categories, labels translated.
      *
-     * @return array<int, array{code:string, label:string, desc:string, locked:bool}>
+     * @return array<int, array{code:string, label:string, description:string, required:bool}>
      */
     public function getCategories(): array
     {
-        return [
-            [
-                'code' => 'necessary',
-                'label' => (string) __('Necessary'),
-                'desc' => (string) __('Essential for the website to function (cart, login, security). These cannot be disabled.'),
-                'locked' => true,
-            ],
-            [
-                'code' => 'analytics',
-                'label' => (string) __('Analytics'),
-                'desc' => (string) __('Help us understand how the site is used, so we can improve it.'),
-                'locked' => false,
-            ],
-            [
-                'code' => 'marketing',
-                'label' => (string) __('Marketing'),
-                'desc' => (string) __('Used to show you relevant recommendations and ads.'),
-                'locked' => false,
-            ],
-        ];
+        $categories = [];
+        foreach ($this->categoryPool->getOffered($this->config->getEnabledCategoryCodes()) as $category) {
+            $categories[] = [
+                'code' => $category['code'],
+                // phpcs:ignore Magento2.Translation.ConstantUsage -- labels come from di.xml
+                'label' => (string) __($category['label']),
+                // phpcs:ignore Magento2.Translation.ConstantUsage -- descriptions come from di.xml
+                'description' => (string) __($category['description']),
+                'required' => $category['required'],
+            ];
+        }
+
+        return $categories;
+    }
+
+    /**
+     * Banner title.
+     *
+     * @return string
+     */
+    public function getTitle(): string
+    {
+        return $this->config->getTitle() ?: (string) __('We value your privacy');
+    }
+
+    /**
+     * Banner message.
+     *
+     * @return string
+     */
+    public function getMessage(): string
+    {
+        // One literal, so that i18n:collect-phrases finds it.
+        // phpcs:ignore Generic.Files.LineLength.TooLong
+        return $this->config->getMessage() ?: (string) __('We use cookies to run this store and, with your permission, to understand how it is used and to show you relevant ads. You can change your choice at any time.');
+    }
+
+    /**
+     * Text of the privacy policy link.
+     *
+     * @return string
+     */
+    public function getLinkLabel(): string
+    {
+        return $this->config->getLinkLabel() ?: (string) __('Privacy policy');
+    }
+
+    /**
+     * Privacy policy URL; '' when none is configured.
+     *
+     * @return string
+     */
+    public function getPrivacyUrl(): string
+    {
+        $page = $this->config->getPrivacyPage();
+        if ($page === '') {
+            return '';
+        }
+        if (preg_match('#^https?://#i', $page)) {
+            return $page;
+        }
+
+        return $this->url->getUrl(null, ['_direct' => ltrim($page, '/')]);
+    }
+
+    /**
+     * CSS modifier for the banner position.
+     *
+     * @return string
+     */
+    public function getPositionClass(): string
+    {
+        return 'slova-cc-banner--' . str_replace('_', '-', $this->config->getPosition());
+    }
+
+    /**
+     * Whether the corner button that reopens the preferences is shown.
+     *
+     * @return bool
+     */
+    public function showReopenButton(): bool
+    {
+        return $this->config->showReopenButton();
+    }
+
+    /**
+     * Settings for web/js/consent.js, as JSON for a data attribute.
+     *
+     * @return string
+     */
+    public function getJsConfig(): string
+    {
+        $categories = [];
+        foreach ($this->categoryPool->getOffered($this->config->getEnabledCategoryCodes()) as $category) {
+            $categories[] = ['code' => $category['code'], 'required' => $category['required']];
+        }
+
+        return (string) $this->json->serialize([
+            'cookieName' => $this->config->getCookieName(),
+            'version' => $this->config->getConsentVersion(),
+            'lifetimeDays' => $this->config->getLifetimeDays(),
+            'categories' => $categories,
+            'accent' => $this->config->getAccentColor(),
+        ]);
     }
 }

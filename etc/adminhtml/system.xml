@@ -2,36 +2,100 @@
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Config:etc/system_file.xsd">
     <system>
-        <section id="slova_cookieconsent" translate="label" sortOrder="900" showInDefault="1"
-                 showInWebsite="1" showInStore="1">
-            <label>Cookie Consent (Slova)</label>
-            <tab>general</tab>
-            <resource>Magento_Config::config</resource>
-            <group id="general" translate="label" sortOrder="10" showInDefault="1"
-                   showInWebsite="1" showInStore="1">
+        <!-- Declared here too: other Slova modules may declare the same tab; Magento
+             merges identical ids, and this module must not depend on any of them. -->
+        <tab id="slova" translate="label" sortOrder="400">
+            <label>Slova</label>
+        </tab>
+        <!-- Every comment is on ONE line: Magento translates it by its exact text,
+             so line breaks and indentation would have to be repeated in i18n/*.csv. -->
+        <section id="slova_cookieconsent" translate="label" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+            <label>Cookie Consent</label>
+            <tab>slova</tab>
+            <resource>Slova_CookieConsent::config</resource>
+
+            <group id="general" translate="label" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
                 <label>General</label>
-                <field id="enabled" translate="label" type="select" sortOrder="10"
-                       showInDefault="1" showInWebsite="1" showInStore="1">
+                <field id="enabled" translate="label comment" type="select" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Enable Cookie Consent</label>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
-                    <comment>Dezactivează Cookie Restriction Mode nativ când acesta e activ (evită dublarea bannerului).</comment>
+                    <comment>This banner replaces Magento's Cookie Restriction Mode and hides its notice. Set Stores > Configuration > General > Web > Default Cookie Settings > Cookie Restriction Mode to No.</comment>
                 </field>
-                <field id="cookie_lifetime" translate="label" type="text" sortOrder="20"
-                       showInDefault="1" showInWebsite="1" showInStore="1">
-                    <label>Consent Lifetime (seconds)</label>
-                    <validate>validate-digits</validate>
-                    <comment>Durata consimțământului în secunde (31536000 = 1 an).</comment>
+                <field id="categories" translate="label comment" type="multiselect" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1" canRestore="1">
+                    <label>Optional Categories</label>
+                    <source_model>Slova\CookieConsent\Model\Config\Source\OptionalCategories</source_model>
+                    <comment>The categories visitors can switch on or off. Necessary is always listed and always on. Offer only the categories your store really uses.</comment>
+                    <depends><field id="enabled">1</field></depends>
                 </field>
-                <field id="consent_version" translate="label" type="text" sortOrder="30"
-                       showInDefault="1" showInWebsite="1" showInStore="1">
+                <field id="privacy_page" translate="label comment" type="text" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1" canRestore="1">
+                    <label>Privacy Policy Link</label>
+                    <comment>The URL key of a CMS page (for example privacy-policy) or a full URL starting with https://. Leave empty to show no link.</comment>
+                    <depends><field id="enabled">1</field></depends>
+                </field>
+                <field id="consent_version" translate="label comment" type="text" sortOrder="40" showInDefault="1" showInWebsite="1" showInStore="1" canRestore="1">
                     <label>Consent Version</label>
-                    <validate>validate-digits</validate>
-                    <comment>Crește valoarea la schimbarea politicii pentru a re-solicita consimțământul.</comment>
+                    <validate>validate-digits validate-greater-than-zero</validate>
+                    <comment>Raise this number after you change your cookie policy or add a category: every visitor is asked again.</comment>
+                    <depends><field id="enabled">1</field></depends>
                 </field>
-                <field id="privacy_page" translate="label" type="text" sortOrder="40"
-                       showInDefault="1" showInWebsite="1" showInStore="1">
-                    <label>Privacy Policy URL Key</label>
-                    <comment>URL key-ul paginii CMS de politică de confidențialitate.</comment>
+                <field id="lifetime_days" translate="label comment" type="text" sortOrder="50" showInDefault="1" showInWebsite="1" showInStore="1" canRestore="1">
+                    <label>Remember the Choice For (Days)</label>
+                    <validate>validate-digits validate-greater-than-zero</validate>
+                    <comment>After this many days the banner asks again. 180 days (about six months) follows the French CNIL; most EU regulators accept up to 13 months.</comment>
+                    <depends><field id="enabled">1</field></depends>
+                </field>
+                <field id="reopen_button" translate="label comment" type="select" sortOrder="60" showInDefault="1" showInWebsite="1" showInStore="1" canRestore="1">
+                    <label>Floating Settings Button</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment><![CDATA[A small button in the corner that reopens the preferences once a choice is made. Withdrawing consent must be as easy as giving it: if you turn this off, add a link to <code>#cookie-settings</code> to every page (for example in the footer).]]></comment>
+                    <depends><field id="enabled">1</field></depends>
+                </field>
+            </group>
+
+            <group id="content" translate="label comment" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>Texts</label>
+                <comment>Leave a field empty to use the built-in text, translated into the store view's language.</comment>
+                <field id="title" translate="label" type="text" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Banner Title</label>
+                </field>
+                <field id="message" translate="label" type="textarea" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Banner Message</label>
+                </field>
+                <field id="link_label" translate="label" type="text" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Privacy Policy Link Text</label>
+                </field>
+            </group>
+
+            <group id="appearance" translate="label" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>Appearance</label>
+                <field id="position" translate="label" type="select" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1" canRestore="1">
+                    <label>Banner Position</label>
+                    <source_model>Slova\CookieConsent\Model\Config\Source\Position</source_model>
+                </field>
+                <field id="accent_color" translate="label comment" type="text" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Accent Color</label>
+                    <comment>Buttons, links and switches, as a hex color such as #1d4ed8. Leave empty (or enter anything else) to follow the theme's primary color.</comment>
+                </field>
+            </group>
+
+            <group id="consent_mode" translate="label" sortOrder="40" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>Google Consent Mode v2</label>
+                <field id="enabled" translate="label comment" type="select" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1" canRestore="1">
+                    <label>Send Google Consent Mode</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment>At the top of every page, before any Google tag: everything denied by default, then updated from the visitor's choice. Turn off only if your Google Tag Manager container or another module already sends the consent defaults.</comment>
+                </field>
+                <field id="wait_for_update" translate="label comment" type="text" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1" canRestore="1">
+                    <label>Wait for Update (ms)</label>
+                    <validate>validate-digits</validate>
+                    <comment>How long Google tags wait for the visitor's stored choice before they fire. 500 is Google's recommendation.</comment>
+                    <depends><field id="enabled">1</field></depends>
+                </field>
+                <field id="ads_data_redaction" translate="label comment" type="select" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1" canRestore="1">
+                    <label>Redact Ads Data Without Consent</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment>While marketing consent is missing, Google Ads tags drop ad click identifiers from their requests.</comment>
+                    <depends><field id="enabled">1</field></depends>
                 </field>
             </group>
         </section>

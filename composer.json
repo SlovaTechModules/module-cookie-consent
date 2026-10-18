@@ -1,0 +1,39 @@
+{
+    "name": "slova/module-cookie-consent",
+    "description": "Free GDPR / ePrivacy cookie consent banner for Hyvä: granular categories, equal-weight Accept and Reject, Google Consent Mode v2, script blocking until consent, Alpine CSP compatible.",
+    "type": "magento2-module",
+    "version": "1.0.0",
+    "license": "MIT",
+    "keywords": [
+        "magento2",
+        "hyva",
+        "cookie-consent",
+        "cookie-banner",
+        "gdpr",
+        "eprivacy",
+        "consent-mode",
+        "google-consent-mode-v2"
+    ],
+    "authors": [
+        {
+            "name": "Slova (Carusel Multimedia SRL)",
+            "homepage": "https://github.com/SlovaTechModules"
+        }
+    ],
+    "require": {
+        "php": "~8.3.0||~8.4.0",
+        "magento/framework": "^103.0.8",
+        "magento/module-config": "^101.2.8",
+        "magento/module-cookie": "^100.4.8",
+        "magento/module-store": "^101.1.8",
+        "hyva-themes/magento2-theme-module": "^1.3"
+    },
+    "autoload": {
+        "files": [
+            "registration.php"
+        ],
+        "psr-4": {
+            "Slova\\CookieConsent\\": ""
+        }
+    }
+}

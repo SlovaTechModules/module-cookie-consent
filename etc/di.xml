@@ -1,0 +1,53 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+    <!-- The consent categories. Add one from your own module's di.xml with the same
+         shape; it then appears under Optional Categories in the admin. Labels and
+         descriptions are English and pass through __(), so translate them in i18n.
+         consent_mode = the Google Consent Mode v2 signals the category grants. -->
+    <type name="Slova\CookieConsent\Model\CategoryPool">
+        <arguments>
+            <argument name="categories" xsi:type="array">
+                <item name="necessary" xsi:type="array">
+                    <item name="label" xsi:type="string">Necessary</item>
+                    <item name="description" xsi:type="string">Essential for the store to work (cart, sign-in, security, your cookie choice). They cannot be switched off.</item>
+                    <item name="required" xsi:type="boolean">true</item>
+                    <item name="sort_order" xsi:type="number">10</item>
+                    <item name="consent_mode" xsi:type="array">
+                        <item name="security_storage" xsi:type="string">security_storage</item>
+                    </item>
+                </item>
+                <item name="preferences" xsi:type="array">
+                    <item name="label" xsi:type="string">Preferences</item>
+                    <item name="description" xsi:type="string">Remember settings such as language, region or recently viewed products, and power embedded content like chat or maps.</item>
+                    <item name="required" xsi:type="boolean">false</item>
+                    <item name="sort_order" xsi:type="number">20</item>
+                    <item name="consent_mode" xsi:type="array">
+                        <item name="functionality_storage" xsi:type="string">functionality_storage</item>
+                        <item name="personalization_storage" xsi:type="string">personalization_storage</item>
+                    </item>
+                </item>
+                <item name="analytics" xsi:type="array">
+                    <item name="label" xsi:type="string">Analytics</item>
+                    <item name="description" xsi:type="string">Help us understand how the store is used, so we can improve it.</item>
+                    <item name="required" xsi:type="boolean">false</item>
+                    <item name="sort_order" xsi:type="number">30</item>
+                    <item name="consent_mode" xsi:type="array">
+                        <item name="analytics_storage" xsi:type="string">analytics_storage</item>
+                    </item>
+                </item>
+                <item name="marketing" xsi:type="array">
+                    <item name="label" xsi:type="string">Marketing</item>
+                    <item name="description" xsi:type="string">Used by us and our advertising partners to show you relevant ads and measure them.</item>
+                    <item name="required" xsi:type="boolean">false</item>
+                    <item name="sort_order" xsi:type="number">40</item>
+                    <item name="consent_mode" xsi:type="array">
+                        <item name="ad_storage" xsi:type="string">ad_storage</item>
+                        <item name="ad_user_data" xsi:type="string">ad_user_data</item>
+                        <item name="ad_personalization" xsi:type="string">ad_personalization</item>
+                    </item>
+                </item>
+            </argument>
+        </arguments>
+    </type>
+</config>

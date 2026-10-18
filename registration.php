@@ -1,7 +1,7 @@
 <?php
 /**
- * Slova_CookieConsent — consimțământ cookie granular (GDPR/ePrivacy).
- * Copyright © Slova. All rights reserved.
+ * Slova_CookieConsent — GDPR / ePrivacy cookie consent for Hyvä.
+ * Copyright © Slova. Licensed under the MIT License, see LICENSE.
  */
 
 declare(strict_types=1);

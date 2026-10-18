@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+    <!-- Consent Mode defaults right after <title>: before the Misc Scripts from the
+         design config (where Google Tag Manager usually sits) and before head.additional. -->
+    <type name="Magento\Framework\View\Page\Config\Renderer">
+        <plugin name="slova_cookieconsent_consent_mode" type="Slova\CookieConsent\Plugin\ConsentModeDefaults"/>
+    </type>
+    <!-- One banner only: Magento's Cookie Restriction notice stays silent while this one is on. -->
+    <type name="Magento\Cookie\Block\Html\Notices">
+        <plugin name="slova_cookieconsent_hide_native_notice" type="Slova\CookieConsent\Plugin\HideNativeNotice"/>
+    </type>
+</config>

@@ -1,222 +1,175 @@
 <?php
 /**
- * Slova_CookieConsent — banner + modal preferințe + store Alpine.
- * Copyright © Slova. All rights reserved.
+ * Slova_CookieConsent — banner, preferences dialog and the corner settings button.
+ * Copyright © Slova. Licensed under the MIT License, see LICENSE.
  *
- * Markup randat mereu (FPC-safe, fără date per-user); vizibilitatea o decide
- * Alpine după citirea cookie-ului `slova_consent`. Layout-ul e în scoped CSS ca
- * să fie independent de build-ul Tailwind. String-urile de banner reutilizează
- * cheile core Magento_Cookie (traduse deja), restul e în i18n/ro_RO.csv.
+ * The markup is the same for every visitor (safe in the full page cache); the Alpine
+ * component in web/js/consent.js reads the consent cookie and decides what to show.
+ * Styles are in web/css/consent.css: no Tailwind rebuild is needed.
  */
 
 declare(strict_types=1);
 
-use Hyva\Theme\Model\ViewModelRegistry;
-use Hyva\Theme\ViewModel\HeroiconsOutline;
-use Hyva\Theme\ViewModel\HyvaCsp;
 use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
 use Slova\CookieConsent\ViewModel\Config;
 
-/** @var \Magento\Framework\View\Element\Template $block */
+/** @var Template $block */
 /** @var Escaper $escaper */
-/** @var ViewModelRegistry $viewModels */
 
-/** @var Config $config */
 $config = $block->getData('cookie_config');
-if (!$config || !$config->isEnabled()) {
+if (!$config instanceof Config || !$config->isEnabled()) {
     return;
 }
 
-/** @var HeroiconsOutline $heroicons */
-$heroicons = $viewModels->require(HeroiconsOutline::class);
-/** @var HyvaCsp $hyvaCsp */
-$hyvaCsp = $viewModels->require(HyvaCsp::class);
-
 $categories = $config->getCategories();
+$privacyUrl = $config->getPrivacyUrl();
+$linkLabel = $config->getLinkLabel();
+$cssUrl = $block->getViewFileUrl('Slova_CookieConsent::css/consent.css');
+$jsUrl = $block->getViewFileUrl('Slova_CookieConsent::js/consent.js');
 ?>
-<style>
-    [x-cloak] { display: none !important; }
-
-    /* ---------- Banner (card jos-dreapta) ---------- */
-    #slova-cookie .cc-banner {
-        position: fixed;
-        z-index: 30;
-        left: 1rem;
-        right: 1rem;
-        bottom: 1rem;
-        display: flex;
-        flex-direction: column;
-        gap: 0.75rem;
-        padding: 1rem;
-        background-color: #F0FAFA;
-        border: 2px solid #006E8A;
-        border-radius: 0.5rem;
-        box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-    }
-    #slova-cookie .cc-banner__title { font-weight: 600; color: #111e1e; }
-    #slova-cookie .cc-banner__text {
-        margin-top: 0.25rem;
-        font-size: 0.875rem;
-        line-height: 1.35;
-        color: #4b5563;
-    }
-    #slova-cookie .cc-link { text-decoration: underline; white-space: nowrap; }
-    #slova-cookie .cc-banner__actions { display: flex; flex-direction: column; gap: 0.5rem; }
-
-    /* Butoane: Acceptă = solid coral (btn-primary temă). Respinge/Personalizează definite aici. */
-    #slova-cookie .cc-btn-outline {
-        display: inline-flex; align-items: center; justify-content: center;
-        padding: 0.55rem 1rem; border: 2px solid #006E8A; color: #006E8A;
-        background: transparent; border-radius: 0.375rem; font-weight: 600; cursor: pointer;
-    }
-    #slova-cookie .cc-btn-outline:hover { background: #E1EFF3; }
-    #slova-cookie .cc-link-btn {
-        background: none; border: none; color: #006E8A; text-decoration: underline;
-        font-weight: 500; cursor: pointer; padding: 0.25rem;
-    }
-
-    @media (min-width: 640px) {
-        #slova-cookie .cc-banner {
-            left: auto; right: 1.5rem; bottom: 1.5rem;
-            max-width: 34rem;
-            flex-direction: row; align-items: center; gap: 1rem;
-        }
-        #slova-cookie .cc-banner__actions { flex: 0 0 auto; min-width: 12rem; }
-    }
-
-    /* ---------- Modal preferințe ---------- */
-    #slova-cookie .cc-modal-overlay {
-        position: fixed; inset: 0; z-index: 60;
-        display: flex; align-items: center; justify-content: center;
-        padding: 1rem; background: rgb(17 30 30 / 0.6);
-    }
-    #slova-cookie .cc-modal {
-        position: relative; width: 100%; max-width: 32rem; max-height: 85vh; overflow-y: auto;
-        background: #fff; border-radius: 0.75rem; padding: 1.5rem 1.5rem 1.25rem;
-        box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.25);
-    }
-    #slova-cookie .cc-modal__close { position: absolute; top: 0.75rem; right: 0.75rem; color: #6b7280; }
-    #slova-cookie .cc-modal__title { font-size: 1.125rem; font-weight: 700; color: #111e1e; }
-    #slova-cookie .cc-modal__intro { margin-top: 0.25rem; font-size: 0.875rem; color: #4b5563; }
-    #slova-cookie .cc-cat { padding: 0.85rem 0; border-top: 1px solid #e5e7eb; }
-    #slova-cookie .cc-cat:first-of-type { border-top: 0; }
-    #slova-cookie .cc-cat__head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
-    #slova-cookie .cc-cat__label { font-weight: 600; color: #111e1e; }
-    #slova-cookie .cc-cat__desc { margin-top: 0.25rem; font-size: 0.8125rem; color: #4b5563; }
-    #slova-cookie .cc-modal__actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1.25rem; }
-    #slova-cookie .cc-modal__actions > * { flex: 1 1 auto; }
-
-    /* ---------- Toggle switch ---------- */
-    #slova-cookie .cc-toggle { position: relative; display: inline-block; width: 2.75rem; height: 1.5rem; flex: 0 0 auto; }
-    #slova-cookie .cc-toggle input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
-    #slova-cookie .cc-toggle__track { position: absolute; inset: 0; background: #cbd5e1; border-radius: 9999px; transition: background 0.2s; }
-    #slova-cookie .cc-toggle__track::after {
-        content: ""; position: absolute; top: 2px; left: 2px; width: 1.25rem; height: 1.25rem;
-        background: #fff; border-radius: 9999px; box-shadow: 0 1px 2px rgb(0 0 0 / 0.2); transition: transform 0.2s;
-    }
-    #slova-cookie .cc-toggle input:checked + .cc-toggle__track { background: #006E8A; }
-    #slova-cookie .cc-toggle input:checked + .cc-toggle__track::after { transform: translateX(1.25rem); }
-    #slova-cookie .cc-toggle input:disabled { cursor: not-allowed; }
-    #slova-cookie .cc-toggle input:disabled + .cc-toggle__track { background: #94a3b8; }
-</style>
-
-<?php /* Logica trăiește în web/js/consent.js — inline rămâne doar configul din PHP. */ ?>
-<script>
-    window.slovaConsentConfig = {
-        cookieName: '<?= $escaper->escapeJs($config->getCookieName()) ?>',
-        version: <?= (int) $config->getConsentVersion() ?>,
-        lifetimeDays: <?= (int) $config->getLifetimeDays() ?>
-    };
-</script>
-<?php $hyvaCsp->registerInlineScript() ?>
-<script src="<?= $escaper->escapeUrl($block->getViewFileUrl('Slova_CookieConsent::js/consent.js')) ?>" defer></script>
-
-<div id="slova-cookie">
-    <!-- Banner -->
-    <div x-data="{}"
-         x-cloak
-         x-show="$store.cookieConsent.ready && ! $store.cookieConsent.decided"
-         class="cc-banner"
-         role="region"
-         aria-label="<?= $escaper->escapeHtmlAttr(__('We use cookies to make your experience better.')) ?>"
+<link rel="stylesheet" href="<?= $escaper->escapeUrl($cssUrl) ?>">
+<script src="<?= $escaper->escapeUrl($jsUrl) ?>" defer></script>
+<div id="slova-cookie-consent"
+     class="slova-cc"
+     x-data="slovaCookieConsent"
+     data-slova-cookie-consent="<?= $escaper->escapeHtmlAttr($config->getJsConfig()) ?>"
+     @keydown.escape.window="closeModal"
+>
+    <section class="slova-cc-banner <?= $escaper->escapeHtmlAttr($config->getPositionClass()) ?>"
+             x-cloak
+             x-show="isBannerVisible"
+             aria-labelledby="slova-cc-title"
     >
-        <div class="cc-banner__body">
-            <p class="cc-banner__title">
-                <?= $escaper->escapeHtml(__('We use cookies to make your experience better.')) ?>
+        <div class="slova-cc-banner__body">
+            <p id="slova-cc-title" class="slova-cc-banner__title">
+                <?= $escaper->escapeHtml($config->getTitle()) ?>
             </p>
-            <p class="cc-banner__text">
-                <?= $escaper->escapeHtml(__('To comply with the new e-Privacy directive, we need to ask for your consent to set the cookies.')) ?>
-                <a href="<?= $escaper->escapeUrl($config->getPrivacyUrl()) ?>" class="cc-link">
-                    <?= $escaper->escapeHtml(__('Read our policy')) ?>
-                </a>
+            <p class="slova-cc-banner__text">
+                <?= $escaper->escapeHtml($config->getMessage()) ?>
+                <?php if ($privacyUrl !== ''): ?>
+                    <a href="<?= $escaper->escapeUrl($privacyUrl) ?>" class="slova-cc-link">
+                        <?= $escaper->escapeHtml($linkLabel) ?>
+                    </a>
+                <?php endif; ?>
             </p>
         </div>
-        <div class="cc-banner__actions">
-            <button type="button" class="btn btn-primary" @click="$store.cookieConsent.acceptAll()">
-                <?= $escaper->escapeHtml(__('Accept all')) ?>
-            </button>
-            <button type="button" class="cc-btn-outline" @click="$store.cookieConsent.rejectAll()">
+        <div class="slova-cc-banner__actions">
+            <?php /* Accept and Reject look the same: EU regulators expect equal weight. */ ?>
+            <button type="button" class="slova-cc-btn" @click="rejectAll">
                 <?= $escaper->escapeHtml(__('Reject all')) ?>
             </button>
-            <button type="button" class="cc-link-btn" @click="$store.cookieConsent.openModal()">
+            <button type="button" class="slova-cc-btn" @click="acceptAll">
+                <?= $escaper->escapeHtml(__('Accept all')) ?>
+            </button>
+            <button type="button" class="slova-cc-text-btn" @click="openModal">
                 <?= $escaper->escapeHtml(__('Customize')) ?>
             </button>
         </div>
-    </div>
+    </section>
 
-    <!-- Modal preferințe -->
-    <div x-data="{}"
-         x-cloak
-         x-show="$store.cookieConsent.open"
-         style="display: none;"
-         class="cc-modal-overlay"
-         @keydown.escape.window="$store.cookieConsent.closeModal()"
-         @click.self="$store.cookieConsent.closeModal()"
-    >
-        <div class="cc-modal" role="dialog" aria-modal="true" aria-labelledby="cc-modal-title">
+    <div class="slova-cc-overlay" x-cloak x-show="isModalVisible" @click.self="closeModal">
+        <div class="slova-cc-modal"
+             role="dialog"
+             aria-modal="true"
+             aria-labelledby="slova-cc-modal-title"
+             tabindex="-1"
+             x-ref="dialog"
+        >
             <button type="button"
-                    class="cc-modal__close"
-                    @click="$store.cookieConsent.closeModal()"
+                    class="slova-cc-close"
+                    @click="closeModal"
                     aria-label="<?= $escaper->escapeHtmlAttr(__('Close')) ?>"
                     title="<?= $escaper->escapeHtmlAttr(__('Close')) ?>"
             >
-                <?= $heroicons->xHtml('', 24, 24, ['aria-hidden' => 'true']); ?>
+                <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"
+                     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                >
+                    <path d="M6 6l12 12M18 6L6 18"/>
+                </svg>
             </button>
 
-            <h2 id="cc-modal-title" class="cc-modal__title">
+            <h2 id="slova-cc-modal-title" class="slova-cc-modal__title">
                 <?= $escaper->escapeHtml(__('Cookie preferences')) ?>
             </h2>
-            <p class="cc-modal__intro">
-                <?= $escaper->escapeHtml(__('Choose which categories of cookies you allow. You can change your choice anytime.')) ?>
+            <p class="slova-cc-modal__intro">
+                <?= $escaper->escapeHtml(
+                    __('Choose which cookies you allow. You can change your choice at any time.')
+                ) ?>
+                <?php if ($privacyUrl !== ''): ?>
+                    <a href="<?= $escaper->escapeUrl($privacyUrl) ?>" class="slova-cc-link">
+                        <?= $escaper->escapeHtml($linkLabel) ?>
+                    </a>
+                <?php endif; ?>
             </p>
 
-            <?php foreach ($categories as $cat): ?>
-                <div class="cc-cat">
-                    <div class="cc-cat__head">
-                        <span class="cc-cat__label"><?= $escaper->escapeHtml($cat['label']) ?></span>
-                        <label class="cc-toggle">
-                            <input type="checkbox"
-                                   x-model="$store.cookieConsent.prefs.<?= $escaper->escapeHtmlAttr($cat['code']) ?>"
-                                   <?= $cat['locked'] ? 'checked disabled' : '' ?>
-                                   aria-label="<?= $escaper->escapeHtmlAttr($cat['label']) ?>">
-                            <span class="cc-toggle__track"></span>
+            <?php foreach ($categories as $category): ?>
+                <?php $id = 'slova-cc-category-' . $category['code']; ?>
+                <div class="slova-cc-category">
+                    <div class="slova-cc-category__head">
+                        <label for="<?= $escaper->escapeHtmlAttr($id) ?>" class="slova-cc-category__label">
+                            <?= $escaper->escapeHtml($category['label']) ?>
                         </label>
+                        <?php if ($category['required']): ?>
+                            <span class="slova-cc-category__always">
+                                <?= $escaper->escapeHtml(__('Always on')) ?>
+                            </span>
+                        <?php endif; ?>
+                        <span class="slova-cc-switch">
+                            <input type="checkbox"
+                                   role="switch"
+                                   id="<?= $escaper->escapeHtmlAttr($id) ?>"
+                                   data-category="<?= $escaper->escapeHtmlAttr($category['code']) ?>"
+                                   aria-describedby="<?= $escaper->escapeHtmlAttr($id) ?>-description"
+                                <?php if ($category['required']): ?>
+                                   checked
+                                   disabled
+                                <?php else: ?>
+                                   :checked="isChecked"
+                                   @change="onToggle"
+                                <?php endif; ?>
+                            >
+                            <span class="slova-cc-switch__track" aria-hidden="true"></span>
+                        </span>
                     </div>
-                    <p class="cc-cat__desc"><?= $escaper->escapeHtml($cat['desc']) ?></p>
+                    <p id="<?= $escaper->escapeHtmlAttr($id) ?>-description" class="slova-cc-category__description">
+                        <?= $escaper->escapeHtml($category['description']) ?>
+                    </p>
                 </div>
             <?php endforeach; ?>
 
-            <div class="cc-modal__actions">
-                <button type="button" class="cc-btn-outline" @click="$store.cookieConsent.rejectAll()">
+            <div class="slova-cc-modal__actions">
+                <button type="button" class="slova-cc-btn slova-cc-btn--outline" @click="rejectAll">
                     <?= $escaper->escapeHtml(__('Reject all')) ?>
                 </button>
-                <button type="button" class="cc-btn-outline" @click="$store.cookieConsent.acceptAll()">
+                <button type="button" class="slova-cc-btn slova-cc-btn--outline" @click="acceptAll">
                     <?= $escaper->escapeHtml(__('Accept all')) ?>
                 </button>
-                <button type="button" class="btn btn-primary" @click="$store.cookieConsent.savePrefs()">
+                <button type="button" class="slova-cc-btn" @click="savePreferences">
                     <?= $escaper->escapeHtml(__('Save preferences')) ?>
                 </button>
             </div>
         </div>
     </div>
+
+    <?php if ($config->showReopenButton()): ?>
+        <button type="button"
+                class="slova-cc-reopen"
+                x-cloak
+                x-show="isReopenVisible"
+                @click="openModal"
+                aria-label="<?= $escaper->escapeHtmlAttr(__('Cookie settings')) ?>"
+                title="<?= $escaper->escapeHtmlAttr(__('Cookie settings')) ?>"
+        >
+            <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"
+                 fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"
+            >
+                <path d="M12 3a9 9 0 1 0 9 9 3 3 0 0 1-3.5-3A3 3 0 0 1 14 5.5 3 3 0 0 1 12 3z"/>
+                <circle cx="8.5" cy="10.5" r="1" fill="currentColor"/>
+                <circle cx="12" cy="15.5" r="1" fill="currentColor"/>
+                <circle cx="16" cy="13" r=".8" fill="currentColor"/>
+                <circle cx="8" cy="15" r=".6" fill="currentColor"/>
+            </svg>
+        </button>
+    <?php endif; ?>
 </div>
